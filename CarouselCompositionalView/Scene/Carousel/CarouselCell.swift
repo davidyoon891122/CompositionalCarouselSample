@@ -20,21 +20,18 @@ final class CarouselCell: UICollectionViewCell {
         return imageView
     }()
     
-    private lazy var mainBoxView: UIView = {
-        let view = UIView()
-        
-        
-        return view
-    }()
-    
     private lazy var containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .systemCyan
         view.layer.cornerRadius = 10
-        view.layer.masksToBounds = true
+        
+        view.layer.shadowColor = UIColor.gray.cgColor
+        view.layer.shadowRadius = 10
+        view.layer.shadowOpacity = 1.0
+        
+        view.layer.shadowOffset = .init(width: 3, height: -3)
         
         [
-            mainBoxView,
             starImageView
         ]
             .forEach {
@@ -42,10 +39,6 @@ final class CarouselCell: UICollectionViewCell {
             }
         
         let offset: CGFloat = 16.0
-        
-        mainBoxView.snp.makeConstraints {
-            $0.top.equalToSuperview()
-        }
         
         starImageView.snp.makeConstraints {
             $0.top.equalToSuperview().offset(offset)
@@ -75,7 +68,6 @@ private extension CarouselCell {
                 contentView.addSubview($0)
             }
         
-        let inset: CGFloat = 16.0
         containerView.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
