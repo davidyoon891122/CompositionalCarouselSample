@@ -22,7 +22,7 @@ final class CarouselViewController: UIViewController {
         return collectionView
     }()
     
-    private var datasource: UICollectionViewDiffableDataSource<CarouselSectionType, Int>!
+    private var datasource: UICollectionViewDiffableDataSource<CarouselSectionType, CarouselModel>!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -67,6 +67,15 @@ private extension CarouselViewController {
             
             section.orthogonalScrollingBehavior = .groupPagingCentered
             
+            section.visibleItemsInvalidationHandler = { [weak self] items, offset, env in
+                guard let currentIndex = items.last?.indexPath.row,
+                      items.last?.indexPath.section == 0,
+                      let self = self
+                else { return }
+                
+                self.willChangeMainSectionIndex(currentIndex: currentIndex)
+            }
+            
             return section
         })
         
@@ -77,6 +86,7 @@ private extension CarouselViewController {
         datasource = UICollectionViewDiffableDataSource(collectionView: carouselCollectionView, cellProvider: { collectionView, indexPath, item in
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CarouselCell.identifier, for: indexPath) as? CarouselCell else { return UICollectionViewCell() }
             
+            cell.setupCell(index: item.index)
             return cell
         })
         
@@ -84,10 +94,45 @@ private extension CarouselViewController {
     }
     
     func applySnapshot() {
-        var snapshot = NSDiffableDataSourceSnapshot<CarouselSectionType, Int>()
+        var snapshot = NSDiffableDataSourceSnapshot<CarouselSectionType, CarouselModel>()
         snapshot.appendSections([.main])
-        snapshot.appendItems([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        
         datasource.apply(snapshot, animatingDifferences: true)
+                
+        DispatchQueue.global().sync {
+            var snapshot = datasource.snapshot()
+            
+            
+            snapshot.appendItems(CarouselModel.carouselItems, toSection: .main)
+            
+            CarouselModel.carouselItems.forEach {
+                snapshot.appendItems([CarouselModel(index: $0.index)], toSection: .main)
+            }
+            CarouselModel.carouselItems.forEach {
+                snapshot.appendItems([CarouselModel(index: $0.index)], toSection: .main)
+            }
+            
+            
+            datasource.apply(snapshot, animatingDifferences: true) { [weak self] in
+                guard let self = self else { return }
+                self.carouselCollectionView.scrollToItem(at: [0, CarouselModel.carouselItems.count], at: .left, animated: false)
+                
+            }
+        }
+    }
+    
+    func willChangeMainSectionIndex(currentIndex: Int) {
+        let startTriggerIndex = CarouselModel.carouselItems.count - 1
+        let endTriggerIndex = CarouselModel.carouselItems.count * 2 + 1
+        
+        let middleLastIndex = CarouselModel.carouselItems.count * 2 - 1
+        let middleStartIndex = CarouselModel.carouselItems.count
+        switch currentIndex {
+        case startTriggerIndex:
+            self.carouselCollectionView.scrollToItem(at: [0, middleLastIndex], at: .left, animated: false)
+        case endTriggerIndex:
+            self.carouselCollectionView.scrollToItem(at: [0, middleStartIndex], at: .left, animated: false)
+        default:
+            break
+        }
     }
 }

@@ -20,6 +20,13 @@ final class CarouselCell: UICollectionViewCell {
         return imageView
     }()
     
+    private lazy var indexLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .label
+        
+        return label
+    }()
+    
     private lazy var containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .systemCyan
@@ -32,7 +39,8 @@ final class CarouselCell: UICollectionViewCell {
         view.layer.shadowOffset = .init(width: 3, height: -3)
         
         [
-            starImageView
+            starImageView,
+            indexLabel
         ]
             .forEach {
                 view.addSubview($0)
@@ -46,6 +54,10 @@ final class CarouselCell: UICollectionViewCell {
             $0.width.equalTo(20)
         }
         
+        indexLabel.snp.makeConstraints {
+            $0.center.equalToSuperview()
+        }
+        
         return view
     }()
     
@@ -56,6 +68,10 @@ final class CarouselCell: UICollectionViewCell {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    func setupCell(index: Int) {
+        indexLabel.text = "\(index)"
     }
 }
 
