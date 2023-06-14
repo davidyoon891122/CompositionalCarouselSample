@@ -24,6 +24,11 @@ final class CarouselViewController: UIViewController {
     
     private var datasource: UICollectionViewDiffableDataSource<CarouselSectionType, CarouselModel>!
     
+    private var currentCenterIndexPath: IndexPath? // Track the current center index path
+
+    private var isScrolling = false // Track scrolling state
+
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureNavigation()
@@ -61,7 +66,7 @@ private extension CarouselViewController {
             
             item.contentInsets = .init(top: 0, leading: 10, bottom: 0, trailing: 10)
             
-            let group = NSCollectionLayoutGroup.horizontal(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9), heightDimension: .estimated(500)), subitems: [item])
+            let group = NSCollectionLayoutGroup.horizontal(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.8), heightDimension: .estimated(400)), subitems: [item])
             
             let section = NSCollectionLayoutSection(group: group)
             
@@ -74,6 +79,13 @@ private extension CarouselViewController {
                 else { return }
                 
                 self.willChangeMainSectionIndex(currentIndex: currentIndex)
+            
+                let centerX = self.carouselCollectionView.contentOffset.x + self.carouselCollectionView.bounds.width / 2
+                let centerY = self.carouselCollectionView.contentOffset.y + self.carouselCollectionView.bounds.height / 2
+                let centerPoint = CGPoint(x: centerX, y: centerY)
+                
+                self.currentCenterIndexPath = self.carouselCollectionView.indexPathForItem(at: centerPoint)
+                self.updateCenterCell()
             }
             
             return section
@@ -101,7 +113,6 @@ private extension CarouselViewController {
         DispatchQueue.global().sync {
             var snapshot = datasource.snapshot()
             
-            
             snapshot.appendItems(CarouselModel.carouselItems, toSection: .main)
             
             CarouselModel.carouselItems.forEach {
@@ -115,7 +126,7 @@ private extension CarouselViewController {
             datasource.apply(snapshot, animatingDifferences: true) { [weak self] in
                 guard let self = self else { return }
                 self.carouselCollectionView.scrollToItem(at: [0, CarouselModel.carouselItems.count], at: .left, animated: false)
-                
+                self.carouselCollectionView.cellForItem(at: [0, CarouselModel.carouselItems.count])?.transform = CGAffineTransform(scaleX: 1.0, y: 1.1)
             }
         }
     }
@@ -133,6 +144,25 @@ private extension CarouselViewController {
             self.carouselCollectionView.scrollToItem(at: [0, middleStartIndex], at: .left, animated: false)
         default:
             break
+        }
+    }
+    
+    func updateCenterCell() {
+        guard let currentCenterIndexPath = currentCenterIndexPath else { return }
+        
+        carouselCollectionView.visibleCells.forEach { cell in
+            guard let indexPath = carouselCollectionView.indexPath(for: cell) else { return }
+            
+            
+            if indexPath == currentCenterIndexPath {
+                UIView.animate(withDuration: 0.3, animations: {
+                    cell.transform = CGAffineTransform(scaleX: 1.0, y: 1.1)
+                })
+            } else {
+                UIView.animate(withDuration: 0.3, animations: {
+                    cell.transform = .identity
+                })
+            }
         }
     }
 }
